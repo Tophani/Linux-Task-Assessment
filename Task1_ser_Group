@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+GROUP="devteam"
+USERS=(dev1 dev2 dev3 dev4 dev5)
+DEFAULT_PW='TempP@ssw0rd!'
+
+# create group if missing
+getent group "$GROUP" >/dev/null || sudo groupadd "$GROUP"
+
+for u in "${USERS[@]}"; do
+  if id "$u" &>/dev/null; then
+    echo "User $u exists; ensuring group membership"
+    sudo usermod -aG "$GROUP" "$u"
+  else
+    sudo useradd -m -s /bin/bash -G "$GROUP" "$u"
+  fi
+  echo "${u}:${DEFAULT_PW}" | sudo chpasswd
+  sudo chage -d 0 "$u"     # force change at next login
+done
+
+echo "Done. Users: ${USERS[*]} in group $GROUP"
